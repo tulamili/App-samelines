@@ -1,0 +1,71 @@
+#!/usr/bin/perl 
+use 5.014 ; use warnings ; 
+use Time::HiRes qw [ gettimeofday tv_interval ] ;
+my ${ dt_start } = [ gettimeofday ] ; 
+#use Encode qw[ decode_utf8 encode_utf8 ] ; 
+use Getopt::Std ; getopts '' , \my %o  ; 
+use Term::ANSIColor qw[ color :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
+use FindBin qw[ $Script ] ; 
+use autodie qw [ open ] ;
+
+* d3 = exists $o{','} && $o{','} eq 0 ? sub{$_[0]} : sub { $_[0] =~ s/(?<=\d)(?=(\d\d\d)+($|\D))/,/gr } ;
+my $time0 = time ; 
+my $readLines = 0 ; # 読み取った行数
+my $sec = $o{'@'} // 15 ; # 何秒おきにアラームを発生させるか
+
+$SIG{INT} = sub { exit } ;
+$SIG{ALRM} = sub { 
+  my $n = $.  =~ s/(?<=\d)(?=(\d\d\d)+($|\D))/,/gr ; # 3桁ごとに区切る。
+  say STDERR GREEN "$n lines read ($Script). " , scalar localtime ; 
+  alarm $sec 
+} ; 
+alarm $sec ;
+
+do{$readLines ++ } while <> ;
+exit ;
+
+END{
+   #sleep 2 ;
+  my $procsec = sprintf "%.5f", tv_interval ${ dt_start } ; #time - $time0 ; # このプログラムの処理にかかった秒数。比較する2個の時刻は秒単位なので、±1秒未満の誤差は発生する。
+  $readLines //= $. ; # Ctrl+Cの連打で必要となる処理。
+  return if ($o{2}//'') eq 0 ; 
+  my $linenumeral = $readLines > 1 ? 'lines' : 'line' ; 
+  print STDERR BOLD FAINT ITALIC & d3 ( $readLines ) . " $linenumeral read. " ; 
+  my $s = tv_interval $dt_start , [ gettimeofday ] ; 
+  say STDERR BOLD FAINT ITALIC " -- $Script ; " . $procsec . " sec. in process" ;
+  #say STDERR BOLD FAINT ITALIC " --  " , "Proc. time: " , sprintf( "%.5f", $s ) , " sec." ;
+  #* d3 = exists $o{','} && $o{','} eq 0 ? sub{$_[0]} : sub { $_[0] =~ s/(?<=\d)(?=(\d\d\d)+($|\D))/,/gr } ;
+  #print STDERR BOLD ITALIC DARK CYAN & d3 ( $totalSum ) . " lines are counted. " ; 
+  #print STDERR BOLD ITALIC DARK CYAN & d3 ( $shownLines ) . " lines output. " ; 
+
+}
+
+## ヘルプの扱い
+sub VERSION_MESSAGE {}
+sub HELP_MESSAGE {
+  use FindBin qw[ $Script ] ; 
+  $ARGV[1] //= '' ;
+  open my $FH , '<' , $0 ;
+  while(<$FH>){
+    s/\$0/$Script/g ;
+    print $_ if s/^=head1// .. s/^=cut// and $ARGV[1] =~ /^o(p(t(i(o(ns?)?)?)?)?)?$/i ? m/^\s+\-/ : 1;
+  }
+  close $FH ;
+  exit 0 ;
+}
+
+=encoding utf8
+
+=head1
+
+コマンド
+
+  $0 inputfile 
+  $0 < inuptfile 
+  cat inputfile | $0 
+
+オプションに関して
+
+
+その他: 
+=cut
