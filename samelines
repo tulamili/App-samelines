@@ -2,7 +2,7 @@
 use 5.014 ; use warnings ; 
 use Time::HiRes qw [ gettimeofday tv_interval ] ;
 my ${ dt_start } = [ gettimeofday ] ; 
-use Getopt::Std ; getopts '12:c:i:' , \my %o  ; 
+use Getopt::Std ; getopts '=12:c:i:' , \my %o  ; 
 use Term::ANSIColor qw[ color :constants ] ; $Term::ANSIColor::AUTORESET = 1 ;
 use FindBin qw[ $Script ] ; 
 use autodie qw [ open ] ;
@@ -25,6 +25,15 @@ alarm $sec ;
 my %f1 ; # 各行の内容の文字列から単純に参照される頻度表になる。(層分割の時は、一段階だけ多次元化する)
 my @f2 ; # 変数の %f1 の頻度の数についての頻度を集計したものになる。(層分割の時は、一段階だけ多次元化する)
 
+if ( $o{'='} ) { 
+  $_ = <> ; 
+  chomp ; 
+  my @F = split /$o{i}/ , $_ , -1 ; 
+  my $z ; 
+  for ( 0 .. $#F ) { do { $z = $_ + 1 ; last } if $o{c} eq $F[$_] } 
+  $o{c} = defined $z ? $z : undef ; 
+}
+
 if ( ! defined $o{c} ) { 
   while ( <> ) {
     $readLines ++ ;
@@ -32,7 +41,7 @@ if ( ! defined $o{c} ) {
     $f1 { $_ } ++ ;
   }
   $f2 [ $f1{$_} ] ++ for keys %f1 ;  # **1 
-  say STDERR BOLD FAINT ITALIC "--" unless ($o{2}//'') eq 0 ; 
+  # say STDERR BOLD FAINT ITALIC "--" unless ($o{2}//'') eq 0 ; 
   say join ',' , map { $o{1}||$f2[$_]!=1 ? "${_}x$f2[$_]" : $_ } grep { defined $f2[$_] } 1 .. $#f2 ; 
 } 
 else 
@@ -51,7 +60,7 @@ else
       $f2 [ $f1{$k}{$rest} ] { $k } ++ ;
     }
   }
-  say STDERR BOLD FAINT ITALIC "--" unless ($o{2}//'') eq 0 ; 
+  # say STDERR BOLD FAINT ITALIC "--" unless ($o{2}//'') eq 0 ; 
   
   for my $k ( sort keys %f1 ) { 
     my @tmp = grep { defined $f2 [ $_ ] { $k } } 1 .. $#f2 ; 
@@ -104,7 +113,8 @@ m重に発生したということがn回発生した」様子を全てのmに�
 
 オプションに関して :
 
-  -c N : N は数である。指定されると、タブ文字区切りの左からN列目ごとに「層分け」する。
+  -c N : N は数である。指定されると、タブ文字区切りの左からN列目ごとに「層分け」する。(負の数も指定可能。次のオプションも参照。)
+  -=   : 入力の1行目を、データの実質ではなくて、変数名と見なす。これにより「-c 変数名」の指定が可能となる。
   -1   : 出力で "x1" の部分を表示するようにする。-1の指定が無い場合、"x1"は省略される。
   -2 0 : 入力行数や処理時間などの2次情報を、標準エラー出力に出力しない。
 
