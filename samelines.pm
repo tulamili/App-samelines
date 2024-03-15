@@ -1,12 +1,12 @@
 package App::samelines ;  
-our $VERSION = '0.030' ; 
-our $DATE = '2024-03-14T13:59+09:00' ; 
+our $VERSION = '0.031' ; 
+our $DATE = '2024-03-15T09:15+09:00' ; 
 
 =encoding utf8
 
 =head1 NAME
 
-App::samelines
+App::samelines The command shows the circumstances about how "same lines" appear in the input. The circumstances can be output according to the layers that is performed by specifying the column number.
 
 =head1 SYNOPSIS
 
